@@ -2,7 +2,9 @@ package rest.addressbook
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -28,12 +30,13 @@ class AddressBookServiceTest {
         addressBook.clear()
     }
 
-    @Test
+    @RepeatedTest(5)
     fun serviceIsAlive() {
         // Request the address book
         val response = restTemplate.getForEntity("http://localhost:$port/contacts", Array<Person>::class.java)
         assertEquals(200, response.statusCode.value())
         assertEquals(0, response.body?.size)
+        assertEquals(0, addressBook.personList.size)
 
         //////////////////////////////////////////////////////////////////////
         // Verify that GET /contacts is well implemented by the service, i.e
@@ -47,6 +50,8 @@ class AddressBookServiceTest {
         // Prepare data
         val juan = Person(name = "Juan")
         val juanURI: URI = URI.create("http://localhost:$port/contacts/person/1")
+        val juanURI2: URI = URI.create("http://localhost:$port/contacts/person/2")
+
 
         // Create a new user
         var response = restTemplate.postForEntity("http://localhost:$port/contacts", juan, Person::class.java)
@@ -68,6 +73,24 @@ class AddressBookServiceTest {
         assertEquals(juan.name, juanUpdated?.name)
         assertEquals(1, juanUpdated?.id)
         assertEquals(juanURI, juanUpdated?.href)
+
+        assertEquals(1, addressBook.personList.size)
+
+        println(addressBook.personList.size)
+        response = restTemplate.postForEntity("http://localhost:$port/contacts", juan, Person::class.java)
+        println(addressBook.personList.size)
+
+
+        assertEquals(201, response.statusCode.value())
+        assertEquals(juanURI2, response.headers.location)
+        assertEquals(MediaType.APPLICATION_JSON, response.headers.contentType)
+        var juanUpdated2 = response.body
+        assertEquals(juan.name, juanUpdated2?.name)
+        assertEquals(2, juanUpdated2?.id)
+        assertEquals(juanURI2, juanUpdated2?.href)
+
+
+
 
         //////////////////////////////////////////////////////////////////////
         // Verify that POST /contacts is well implemented by the service, i.e
@@ -104,6 +127,7 @@ class AddressBookServiceTest {
         assertEquals(mariaURI, mariaUpdated?.href)
 
         // Check that the new user exists
+        val serverStatusPre = addressBook.personList.size;
         response = restTemplate.getForEntity(mariaURI, Person::class.java)
 
         assertEquals(200, response.statusCode.value())
@@ -112,6 +136,8 @@ class AddressBookServiceTest {
         assertEquals(maria.name, mariaUpdated?.name)
         assertEquals(3, mariaUpdated?.id)
         assertEquals(mariaURI, mariaUpdated?.href)
+
+        assertEquals(serverStatusPre, addressBook.personList.size)
 
         //////////////////////////////////////////////////////////////////////
         // Verify that GET /contacts/person/3 is well implemented by the service, i.e
@@ -129,11 +155,16 @@ class AddressBookServiceTest {
         addressBook.personList.add(juan)
 
         // Test list of contacts
+        val serverStatusPre = addressBook.personList.size;
+
         val response = restTemplate.getForEntity("http://localhost:$port/contacts", Array<Person>::class.java)
         assertEquals(200, response.statusCode.value())
         assertEquals(MediaType.APPLICATION_JSON, response.headers.contentType)
         assertEquals(2, response.body?.size)
         assertEquals(juan.name, response.body?.get(1)?.name)
+
+        assertEquals(serverStatusPre, addressBook.personList.size)
+
 
         //////////////////////////////////////////////////////////////////////
         // Verify that GET /contacts is well implemented by the service, i.e
@@ -153,8 +184,18 @@ class AddressBookServiceTest {
         // Update Maria
         val maria = Person(name = "Maria")
 
+        var persondataPre = addressBook.personList.get(1);
         var response = restTemplate.exchange(juanURI, HttpMethod.PUT, HttpEntity(maria), Person::class.java)
         assertEquals(204, response.statusCode.value())
+        assertNotEquals(persondataPre, addressBook.personList.get(1))
+
+        persondataPre = addressBook.personList.get(1);
+        response = restTemplate.exchange(juanURI, HttpMethod.PUT, HttpEntity(maria), Person::class.java)
+        assertEquals(204, response.statusCode.value())
+        assertEquals(persondataPre, addressBook.personList.get(1))
+
+
+
 
         // Verify that the update is real
         response = restTemplate.getForEntity(juanURI, Person::class.java)
@@ -165,6 +206,8 @@ class AddressBookServiceTest {
         assertEquals(2, updatedMaria?.id)
         assertEquals(juanURI, updatedMaria?.href)
 
+
+
         // Verify that only can be updated existing values
         restTemplate.execute("http://localhost:$port/contacts/person/3", HttpMethod.PUT,
             {
@@ -173,6 +216,7 @@ class AddressBookServiceTest {
             },
             { assertEquals(404, it.statusCode.value()) }
         )
+
 
         //////////////////////////////////////////////////////////////////////
         // Verify that PUT /contacts/person/2 is well implemented by the service, i.e
@@ -190,7 +234,11 @@ class AddressBookServiceTest {
         addressBook.personList.add(juan)
 
         // Delete a user
+        val serverStatusPre = addressBook.personList.size;
         restTemplate.execute(juanURI, HttpMethod.DELETE, {}, { assertEquals(204, it.statusCode.value()) })
+        restTemplate.execute(juanURI, HttpMethod.DELETE, {}, { assertEquals(204, it.statusCode.value()) })
+        assertNotEquals(serverStatusPre, addressBook.personList.size)
+
 
         // Verify that the user has been deleted
         restTemplate.execute(juanURI, HttpMethod.GET, {}, { assertEquals(404, it.statusCode.value()) })

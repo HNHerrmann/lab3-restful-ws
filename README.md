@@ -40,4 +40,4 @@ If you desist of your goal, release it by a PR so other fellow can try it.
 | User name | NIA | CI | Solution | Score |
 | - | - | - | - | - |
 [UNIZAR-30246-WebEngineering](https://github.com/UNIZAR-30246-WebEngineering/lab3-restful-ws) | 30246 | [![Build Status](https://github.com/UNIZAR-30246-WebEngineering/lab3-restful-ws/actions/workflows/ci.yml/badge.svg)](https://github.com/UNIZAR-30246-WebEngineering/lab3-restful-ws/actions/workflows/ci.yml) | [instructions](https://github.com/UNIZAR-30246-WebEngineering/lab3-restful-ws/wiki)
-your name | your nia | your CI status | your solution
+[Hector Herrmann](https://github.com/HNHerrmann/lab3-restful-ws) | 646946 | [![Build Status](https://github.com/HNHerrmann/lab3-restful-ws/actions/workflows/ci.yml/badge.svg)](https://github.com/HNHerrmann/lab3-restful-ws/actions/workflows/ci.yml) | [AddressBookServiceTest](https://github.com/HNHerrmann/lab3-restful-ws/blob/main/src/test/kotlin/rest/addressbook/AddressBookServiceTest.kt)
